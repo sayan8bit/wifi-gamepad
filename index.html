@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, user-scalable=no"
+    />
+    <title>Mobile Gamepad</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        -webkit-user-select: none;
+        user-select: none;
+      }
+
+      body {
+        font-family: Arial, sans-serif;
+        background: #111827;
+        color: white;
+        overflow: hidden;
+        touch-action: none;
+      }
+
+      #connectionScreen {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        padding: 20px;
+      }
+
+      #gamepadScreen {
+        display: none;
+        position: fixed;
+        inset: 0;
+      }
+
+      .icon {
+        width: 80px;
+        height: 80px;
+        margin-bottom: 20px;
+      }
+
+      h1 {
+        font-size: 24px;
+        margin-bottom: 10px;
+      }
+
+      .status {
+        color: #9ca3af;
+        margin-bottom: 20px;
+      }
+
+      button {
+        background: #2563eb;
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-size: 16px;
+        cursor: pointer;
+      }
+
+      button:hover {
+        background: #1d4ed8;
+      }
+
+      #header {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        padding: 16px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: rgba(31, 41, 55, 0.5);
+        z-index: 1000;
+      }
+
+      .status-indicator {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .status-dot {
+        width: 12px;
+        height: 12px;
+        background: #10b981;
+        border-radius: 50%;
+        animation: pulse 2s infinite;
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.5;
+        }
+      }
+
+      .header-buttons {
+        display: flex;
+        gap: 8px;
+      }
+
+      .icon-btn {
+        width: 40px;
+        height: 40px;
+        background: #374151;
+        border: none;
+        border-radius: 8px;
+        color: white;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .icon-btn.active {
+        background: #eab308;
+      }
+
+      .icon-btn.save {
+        background: #16a34a;
+      }
+
+      .control {
+        position: absolute;
+        transform: translate(-50%, -50%);
+        transition: none;
+      }
+
+      .control.editing {
+        border: 4px solid #eab308 !important;
+      }
+
+      .resize-controls {
+        position: absolute;
+        top: -32px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #1f2937;
+        border-radius: 4px;
+        padding: 4px 8px;
+        display: none;
+        gap: 4px;
+      }
+
+      .control.editing .resize-controls {
+        display: flex;
+      }
+
+      .resize-btn {
+        background: #374151;
+        border: none;
+        color: white;
+        padding: 2px 8px;
+        font-size: 12px;
+        cursor: pointer;
+        border-radius: 2px;
+      }
+
+      #joystick {
+        width: 150px;
+        height: 150px;
+        background: rgba(55, 65, 81, 0.5);
+        border: 4px solid #4b5563;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      #joystickKnob {
+        width: 33%;
+        height: 33%;
+        background: #3b82f6;
+        border-radius: 50%;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        transition: transform 0.05s;
+      }
+
+      .action-btn {
+        border-radius: 50%;
+        background: #374151;
+        border: none;
+        color: white;
+        font-size: 20px;
+        font-weight: bold;
+        cursor: pointer;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+      }
+
+      .action-btn.pressed {
+        background: #10b981;
+      }
+
+      .shoulder-btn {
+        border-radius: 8px;
+        background: #374151;
+        border: none;
+        color: white;
+        font-size: 18px;
+        font-weight: bold;
+        cursor: pointer;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+      }
+
+      .shoulder-btn.pressed {
+        background: #a855f7;
+      }
+
+      .system-btn {
+        border-radius: 6px;
+        background: #374151;
+        border: none;
+        color: white;
+        font-size: 12px;
+        font-weight: bold;
+        cursor: pointer;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+      }
+
+      .system-btn.pressed {
+        background: #f97316;
+      }
+
+      #editModeIndicator {
+        position: absolute;
+        bottom: 16px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #eab308;
+        padding: 12px 24px;
+        border-radius: 8px;
+        display: none;
+        text-align: center;
+      }
+
+      #editModeIndicator.active {
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Connection Screen -->
+    <div id="connectionScreen">
+      <svg
+        class="icon"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+      >
+        <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+        <line x1="3" y1="6" x2="21" y2="6" />
+        <path d="M16 10a4 4 0 0 1-8 0" />
+      </svg>
+      <h1>Mobile Gamepad</h1>
+      <p class="status">Scan QR code from PC to connect</p>
+      <button id="reconnectBtn" style="display: none">Reconnect</button>
+    </div>
+
+    <!-- Gamepad Screen -->
+    <div id="gamepadScreen">
+      <div id="header">
+        <div class="status-indicator">
+          <div class="status-dot"></div>
+          <span>Connected</span>
+        </div>
+        <div class="header-buttons">
+          <button id="saveBtn" class="icon-btn save" style="display: none">
+            💾
+          </button>
+          <button id="editBtn" class="icon-btn">⚙️</button>
+        </div>
+      </div>
+
+      <!-- Joystick -->
+      <div id="joystick" class="control">
+        <div class="resize-controls">
+          <button class="resize-btn" data-control="joystick" data-delta="-10">
+            -
+          </button>
+          <button class="resize-btn" data-control="joystick" data-delta="10">
+            +
+          </button>
+        </div>
+        <div id="joystickKnob"></div>
+      </div>
+
+      <!-- A Button -->
+      <button id="aButton" class="control action-btn">
+        <div class="resize-controls">
+          <button class="resize-btn" data-control="aButton" data-delta="-5">
+            -
+          </button>
+          <button class="resize-btn" data-control="aButton" data-delta="5">
+            +
+          </button>
+        </div>
+        A
+      </button>
+
+      <!-- B Button -->
+      <button id="bButton" class="control action-btn">
+        <div class="resize-controls">
+          <button class="resize-btn" data-control="bButton" data-delta="-5">
+            -
+          </button>
+          <button class="resize-btn" data-control="bButton" data-delta="5">
+            +
+          </button>
+        </div>
+        B
+      </button>
+
+      <!-- X Button -->
+      <button id="xButton" class="control action-btn">
+        <div class="resize-controls">
+          <button class="resize-btn" data-control="xButton" data-delta="-5">
+            -
+          </button>
+          <button class="resize-btn" data-control="xButton" data-delta="5">
+            +
+          </button>
+        </div>
+        X
+      </button>
+
+      <!-- Y Button -->
+      <button id="yButton" class="control action-btn">
+        <div class="resize-controls">
+          <button class="resize-btn" data-control="yButton" data-delta="-5">
+            -
+          </button>
+          <button class="resize-btn" data-control="yButton" data-delta="5">
+            +
+          </button>
+        </div>
+        Y
+      </button>
+
+      <!-- L Button -->
+      <button id="lButton" class="control shoulder-btn">
+        <div class="resize-controls">
+          <button class="resize-btn" data-control="lButton" data-delta="-5">
+            -
+          </button>
+          <button class="resize-btn" data-control="lButton" data-delta="5">
+            +
+          </button>
+        </div>
+        L
+      </button>
+
+      <!-- R Button -->
+      <button id="rButton" class="control shoulder-btn">
+        <div class="resize-controls">
+          <button class="resize-btn" data-control="rButton" data-delta="-5">
+            -
+          </button>
+          <button class="resize-btn" data-control="rButton" data-delta="5">
+            +
+          </button>
+        </div>
+        R
+      </button>
+
+      <!-- Start Button -->
+      <button id="startButton" class="control system-btn">
+        <div class="resize-controls">
+          <button class="resize-btn" data-control="startButton" data-delta="-5">
+            -
+          </button>
+          <button class="resize-btn" data-control="startButton" data-delta="5">
+            +
+          </button>
+        </div>
+        START
+      </button>
+
+      <!-- Select Button -->
+      <button id="selectButton" class="control system-btn">
+        <div class="resize-controls">
+          <button
+            class="resize-btn"
+            data-control="selectButton"
+            data-delta="-5"
+          >
+            -
+          </button>
+          <button class="resize-btn" data-control="selectButton" data-delta="5">
+            +
+          </button>
+        </div>
+        SELECT
+      </button>
+
+      <div id="editModeIndicator">
+        <p style="font-weight: bold">Edit Mode Active</p>
+        <p style="font-size: 14px">Drag controls to reposition</p>
+      </div>
+    </div>
+
+    <script src="gamepad.js"></script>
+  </body>
+</html>
