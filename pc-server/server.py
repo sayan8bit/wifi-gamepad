@@ -29,7 +29,7 @@ class GamepadServer:
         finally:
             s.close()
         return ip
-    
+        
     def generate_qr(self, url):
         """Generate QR code and display it"""
         qr = qrcode.QRCode(version=1, box_size=10, border=5)
@@ -43,11 +43,9 @@ class GamepadServer:
         img = qr.make_image(fill_color="black", back_color="white")
         img.save("gamepad_qr.png")
         print("QR code saved as 'gamepad_qr.png'")
-    
+        
     def handle_joystick(self, x, y):
         """Convert joystick input to WASD keys"""
-        current_time = time.time()
-        
         # Deadzone
         if abs(x) < 0.2 and abs(y) < 0.2:
             self.release_wasd()
@@ -84,6 +82,27 @@ class GamepadServer:
             if key in self.current_keys:
                 pyautogui.keyUp(key)
                 self.current_keys.discard(key)
+
+    def handle_mouse_move(self, x, y):
+        """Handle touchpad mouse movement"""
+        # Sensitivity is now handled on the phone side,
+        # so we just apply the raw delta received.
+        try:
+            # _pause=False makes it faster/smoother
+            pyautogui.moveRel(x, y, _pause=False)
+        except Exception as e:
+            pass
+
+    def handle_mouse_click(self, button, pressed):
+        """Handle mouse clicks"""
+        mouse_btn = 'left' if button == 'left' else 'right'
+        try:
+            if pressed:
+                pyautogui.mouseDown(button=mouse_btn)
+            else:
+                pyautogui.mouseUp(button=mouse_btn)
+        except Exception as e:
+            print(f"Error mouse click: {e}")
     
     def handle_button(self, button, pressed):
         """Handle button press/release"""
@@ -95,7 +114,11 @@ class GamepadServer:
             'Shift': 'shift',
             'Control': 'ctrl',
             'Enter': 'enter',
-            'Escape': 'esc'
+            'Escape': 'esc',
+            'R': 'r',
+            'C': 'c',
+            'X': 'x'
+            # 1, 2, 3 removed
         }
         
         key = key_map.get(button)
@@ -139,6 +162,16 @@ class GamepadServer:
                             button = msg_data.get('button')
                             pressed = msg_data.get('pressed')
                             self.handle_button(button, pressed)
+
+                        elif msg_type == 'mouse_move':
+                            x = msg_data.get('x', 0)
+                            y = msg_data.get('y', 0)
+                            self.handle_mouse_move(x, y)
+
+                        elif msg_type == 'mouse_click':
+                            button = msg_data.get('button')
+                            pressed = msg_data.get('pressed')
+                            self.handle_mouse_click(button, pressed)
                             
                     except json.JSONDecodeError:
                         print("Invalid JSON received")
@@ -177,7 +210,10 @@ class GamepadServer:
         print("\n" + "="*60)
         print("Mobile Gamepad Server Started!")
         print("="*60)
-        self.generate_qr(ws_url)
+        
+        total_url=f"http://{local_ip}:8000/index.html?server="+ws_url;
+        self.generate_qr(total_url)
+
         print("\n" + "="*60)
         print(f"Server running on: {local_ip}:{port}")
         print("Waiting for mobile device to connect...")
