@@ -127,7 +127,6 @@
       .icon-btn.active {
         background: #eab308;
       }
-
       .icon-btn.save {
         background: #16a34a;
       }
@@ -140,32 +139,6 @@
 
       .control.editing {
         border: 4px solid #eab308 !important;
-      }
-
-      .resize-controls {
-        position: absolute;
-        top: -32px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: #1f2937;
-        border-radius: 4px;
-        padding: 4px 8px;
-        display: none;
-        gap: 4px;
-      }
-
-      .control.editing .resize-controls {
-        display: flex;
-      }
-
-      .resize-btn {
-        background: #374151;
-        border: none;
-        color: white;
-        padding: 2px 8px;
-        font-size: 12px;
-        cursor: pointer;
-        border-radius: 2px;
       }
 
       #joystick {
@@ -185,7 +158,43 @@
         background: #3b82f6;
         border-radius: 50%;
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-        transition: transform 0.05s;
+      }
+
+      #touchPad {
+        background: rgba(30, 30, 30, 0.8);
+        border: 2px solid #555;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: rgba(255, 255, 255, 0.3);
+        font-size: 12px;
+        text-transform: uppercase;
+      }
+
+      /* Sensitivity Slider (Hidden by default) */
+      #sensitivityControls {
+        position: absolute;
+        top: 60px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #1f2937;
+        padding: 10px 20px;
+        border-radius: 8px;
+        display: none; /* Only visible in edit mode */
+        flex-direction: column;
+        align-items: center;
+        gap: 5px;
+        z-index: 1500;
+        border: 2px solid #eab308;
+      }
+
+      #sensitivityControls.active {
+        display: flex;
+      }
+
+      #sensSlider {
+        width: 150px;
       }
 
       .action-btn {
@@ -201,6 +210,21 @@
 
       .action-btn.pressed {
         background: #10b981;
+      }
+
+      .mouse-btn {
+        border-radius: 8px;
+        background: #4b5563;
+        border: 1px solid #6b7280;
+        color: white;
+        font-size: 14px;
+        font-weight: bold;
+        cursor: pointer;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+      }
+
+      .mouse-btn.pressed {
+        background: #3b82f6;
       }
 
       .shoulder-btn {
@@ -219,6 +243,7 @@
       }
 
       .system-btn {
+        padding: 0;
         border-radius: 6px;
         background: #374151;
         border: none;
@@ -243,6 +268,7 @@
         border-radius: 8px;
         display: none;
         text-align: center;
+        z-index: 2000;
       }
 
       #editModeIndicator.active {
@@ -271,7 +297,7 @@
 
     <!-- Gamepad Screen -->
     <div id="gamepadScreen">
-      <div id="header">
+      <div id="header" style="z-index: -1; background: none">
         <div class="status-indicator">
           <div class="status-dot"></div>
           <span>Connected</span>
@@ -284,128 +310,49 @@
         </div>
       </div>
 
+      <!-- Sensitivity Control (Visible in Edit Mode) -->
+      <div id="sensitivityControls">
+        <label>Mouse Sensitivity: <span id="sensValue">1.0</span></label>
+        <input
+          type="range"
+          id="sensSlider"
+          min="0.1"
+          max="10.0"
+          step="0.1"
+          value="1.0"
+        />
+      </div>
+
       <!-- Joystick -->
       <div id="joystick" class="control">
-        <div class="resize-controls">
-          <button class="resize-btn" data-control="joystick" data-delta="-10">
-            -
-          </button>
-          <button class="resize-btn" data-control="joystick" data-delta="10">
-            +
-          </button>
-        </div>
         <div id="joystickKnob"></div>
       </div>
 
-      <!-- A Button -->
-      <button id="aButton" class="control action-btn">
-        <div class="resize-controls">
-          <button class="resize-btn" data-control="aButton" data-delta="-5">
-            -
-          </button>
-          <button class="resize-btn" data-control="aButton" data-delta="5">
-            +
-          </button>
-        </div>
-        A
-      </button>
+      <!-- Touchpad -->
+      <div id="touchPad" class="control">
+        <span>Touchpad</span>
+      </div>
 
-      <!-- B Button -->
-      <button id="bButton" class="control action-btn">
-        <div class="resize-controls">
-          <button class="resize-btn" data-control="bButton" data-delta="-5">
-            -
-          </button>
-          <button class="resize-btn" data-control="bButton" data-delta="5">
-            +
-          </button>
-        </div>
-        B
-      </button>
+      <!-- Mouse Buttons -->
+      <button id="mouseLBtn" class="control mouse-btn">L-Click</button>
+      <button id="mouseRBtn" class="control mouse-btn">R-Click</button>
 
-      <!-- X Button -->
-      <button id="xButton" class="control action-btn">
-        <div class="resize-controls">
-          <button class="resize-btn" data-control="xButton" data-delta="-5">
-            -
-          </button>
-          <button class="resize-btn" data-control="xButton" data-delta="5">
-            +
-          </button>
-        </div>
-        X
-      </button>
+      <!-- Extra Keys -->
+      <button id="keyRBtn" class="control action-btn">R</button>
+      <button id="keyCBtn" class="control action-btn">C</button>
+      <button id="keyXBtn" class="control action-btn">X</button>
 
-      <!-- Y Button -->
-      <button id="yButton" class="control action-btn">
-        <div class="resize-controls">
-          <button class="resize-btn" data-control="yButton" data-delta="-5">
-            -
-          </button>
-          <button class="resize-btn" data-control="yButton" data-delta="5">
-            +
-          </button>
-        </div>
-        Y
-      </button>
+      <!-- Standard Buttons -->
+      <button id="aButton" class="control action-btn">_</button>
+      <button id="bButton" class="control action-btn">E</button>
+      <button id="xButton" class="control action-btn">Q</button>
+      <button id="yButton" class="control action-btn">F</button>
+      <button id="lButton" class="control shoulder-btn">SHIFT</button>
+      <button id="rButton" class="control shoulder-btn">CTRL</button>
+      <button id="startButton" class="control system-btn">ENTER</button>
+      <button id="selectButton" class="control system-btn">ESC</button>
 
-      <!-- L Button -->
-      <button id="lButton" class="control shoulder-btn">
-        <div class="resize-controls">
-          <button class="resize-btn" data-control="lButton" data-delta="-5">
-            -
-          </button>
-          <button class="resize-btn" data-control="lButton" data-delta="5">
-            +
-          </button>
-        </div>
-        L
-      </button>
-
-      <!-- R Button -->
-      <button id="rButton" class="control shoulder-btn">
-        <div class="resize-controls">
-          <button class="resize-btn" data-control="rButton" data-delta="-5">
-            -
-          </button>
-          <button class="resize-btn" data-control="rButton" data-delta="5">
-            +
-          </button>
-        </div>
-        R
-      </button>
-
-      <!-- Start Button -->
-      <button id="startButton" class="control system-btn">
-        <div class="resize-controls">
-          <button class="resize-btn" data-control="startButton" data-delta="-5">
-            -
-          </button>
-          <button class="resize-btn" data-control="startButton" data-delta="5">
-            +
-          </button>
-        </div>
-        START
-      </button>
-
-      <!-- Select Button -->
-      <button id="selectButton" class="control system-btn">
-        <div class="resize-controls">
-          <button
-            class="resize-btn"
-            data-control="selectButton"
-            data-delta="-5"
-          >
-            -
-          </button>
-          <button class="resize-btn" data-control="selectButton" data-delta="5">
-            +
-          </button>
-        </div>
-        SELECT
-      </button>
-
-      <div id="editModeIndicator">
+      <div id="editModeIndicator" style="z-index: -1; background: none">
         <p style="font-weight: bold">Edit Mode Active</p>
         <p style="font-size: 14px">Drag controls to reposition</p>
       </div>
